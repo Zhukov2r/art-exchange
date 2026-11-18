@@ -1,0 +1,247 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#11100e">
+<title>ART EXCHANGE</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#11100e;--panel:#1d1a15;--line:#493d2a;--gold:#dfbd76;--muted:#a99f8e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#f6f0e4;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;padding-bottom:88px}
+header{padding:22px 18px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#11100ef2;z-index:4}
+.brand{font:bold 23px Georgia,serif;letter-spacing:2px;color:var(--gold)}
+.tagline{font-size:11px;color:var(--muted);margin-top:5px}
+main{max-width:760px;margin:auto;padding:16px}
+.page{display:none}.page.active{display:block}
+.hero{padding:22px;border:1px solid #715b35;border-radius:16px;background:linear-gradient(135deg,#382b19,#17140f)}
+.eyebrow{font-size:10px;letter-spacing:2px;color:var(--gold)}
+h1{font:normal 29px Georgia,serif;line-height:1.15;margin:12px 0}
+h2{font:normal 23px Georgia,serif;margin:22px 0 13px}
+p{color:var(--muted);font-size:13px;line-height:1.5}
+button{font:inherit;cursor:pointer}
+.primary{background:var(--gold);color:#17120b;border:0;border-radius:9px;padding:12px 16px;font-weight:700}
+.secondary{background:#29251e;color:var(--gold);border:1px solid #665333;border-radius:9px;padding:10px 13px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{min-width:0;background:var(--panel);border:1px solid #403728;border-radius:13px;overflow:hidden}
+.art{height:155px;background:#30291e;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.art img{width:100%;height:100%;object-fit:cover}
+.art .placeholder{font-size:54px}
+.info{padding:11px}
+.name{font:16px Georgia,serif;overflow-wrap:anywhere}
+.artist,.hint{font-size:11px;color:var(--muted);margin-top:5px}
+.price{font-size:13px;color:var(--gold);margin:11px 0}
+.card button{width:100%;font-size:12px;padding:9px 5px}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:5;display:flex;justify-content:space-around;background:#191713;border-top:1px solid var(--line);padding:9px 2px calc(9px + env(safe-area-inset-bottom))}
+nav button{background:none;border:0;color:#b7ad9b;font-size:10px;padding:4px}
+nav button.active{color:var(--gold)}
+nav span{display:block;font-size:19px;margin-bottom:3px}
+.field{width:100%;padding:12px;margin:7px 0 14px;background:#242019;color:white;border:1px solid #665438;border-radius:8px;font-size:15px}
+label{font-size:12px;color:#c9b88d}
+.panel{padding:16px;background:var(--panel);border:1px solid #403728;border-radius:13px}
+.notice{padding:12px;background:#302719;border-radius:10px;color:#dfbd76;font-size:11px;line-height:1.5;margin:13px 0}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:28px 10px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #393329;font-size:13px}
+.small{font-size:11px;color:var(--muted)}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-end;z-index:10}
+.modal.open{display:flex}
+.sheet{background:#1d1a15;border:1px solid var(--line);border-radius:18px 18px 0 0;padding:20px;width:100%;max-height:85vh;overflow:auto}
+.sheet h3{font:normal 22px Georgia,serif;margin:0 0 10px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">ART EXCHANGE</div>
+  <div class="tagline">DIGITAL ART · UNIQUE OWNERSHIP</div>
+</header>
+<main>
+<section id="home" class="page active">
+  <div class="hero">
+    <div class="eyebrow">THE ART MARKETPLACE</div>
+    <h1>Искусство.<br>Коллекция. Торговля.</h1>
+    <p>Собирай цифровые произведения, создавай собственные работы и предлагай сделки другим коллекционерам.</p>
+    <button class="primary" onclick="go('market')">Открыть маркет</button>
+  </div>
+  <h2>Витрина</h2>
+  <div class="grid" id="homeGrid"></div>
+</section>
+
+<section id="market" class="page">
+  <h2>Арт-маркет</h2>
+  <p>Каждая карточка в демо имеет одного владельца. Покупки здесь учебные и не списывают Stars.</p>
+  <div class="grid" id="marketGrid"></div>
+</section>
+
+<section id="create" class="page">
+  <h2>Создать произведение</h2>
+  <div class="panel">
+    <label for="artTitle">Название</label>
+    <input class="field" id="artTitle" maxlength="60" placeholder="Например, Золотой закат">
+    <label for="artAuthor">Имя автора</label>
+    <input class="field" id="artAuthor" maxlength="40" placeholder="Имя или псевдоним">
+    <label for="artPrice">Цена в Stars (демо)</label>
+    <input class="field" id="artPrice" type="number" min="1" max="100000" placeholder="100">
+    <label for="artFile">Изображение</label>
+    <input class="field" id="artFile" type="file" accept="image/*">
+    <p class="small">Для теста изображение хранится только в этом браузере. Не загружай чужие работы без разрешения.</p>
+    <button class="primary" style="width:100%" onclick="createArtwork()">Добавить работу</button>
+  </div>
+</section>
+
+<section id="collection" class="page">
+  <h2>Моя коллекция</h2>
+  <div class="grid" id="ownedGrid"></div>
+</section>
+
+<section id="trade" class="page">
+  <h2>Торговля</h2>
+  <p>Можно выставить свою работу на продажу или отправить предложение владельцу. В демо предложение сохраняется локально.</p>
+  <div id="tradeList" class="grid"></div>
+  <h2>Мои предложения</h2>
+  <div class="panel" id="offersList"><p class="small">Пока предложений нет.</p></div>
+</section>
+
+<section id="profile" class="page">
+  <h2>Коллекционер</h2>
+  <div class="panel">
+    <div class="eyebrow">ART EXCHANGE MEMBER</div>
+    <h1 id="userName">Коллекционер</h1>
+    <div class="row"><span>Работ в коллекции</span><b id="ownedCount">0</b></div>
+    <div class="row"><span>Создано работ</span><b id="createdCount">0</b></div>
+    <div class="row"><span>Telegram</span><b id="telegramStatus">Открыт в браузере</b></div>
+  </div>
+  <div class="notice">Это прототип интерфейса. Данные сейчас хранятся на устройстве и не синхронизируются между пользователями.</div>
+</section>
+</main>
+
+<nav>
+  <button class="active" data-page="home" onclick="go('home',this)"><span>⌂</span>Главная</button>
+  <button data-page="market" onclick="go('market',this)"><span>▧</span>Маркет</button>
+  <button data-page="create" onclick="go('create',this)"><span>＋</span>Создать</button>
+  <button data-page="collection" onclick="go('collection',this)"><span>♧</span>Коллекция</button>
+  <button data-page="trade" onclick="go('trade',this)"><span>⇄</span>Торговля</button>
+  <button data-page="profile" onclick="go('profile',this)"><span>♙</span>Профиль</button>
+</nav>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="sheet">
+    <h3 id="modalTitle">Картина</h3>
+    <div id="modalBody"></div>
+    <div class="actions"><button class="secondary" onclick="closeModal()">Закрыть</button></div>
+  </div>
+</div>
+
+<script>
+const tg=window.Telegram?.WebApp;
+tg?.ready(); tg?.expand();
+const telegramUser=tg?.initDataUnsafe?.user;
+const userId=telegramUser?.id ? String(telegramUser.id) : 'demo-local-user';
+const userName=telegramUser?.first_name || 'Коллекционер';
+document.getElementById('userName').textContent=userName;
+if(telegramUser) document.getElementById('telegramStatus').textContent='Подключён';
+
+const starter=[
+ {id:'classic-1',title:'Мона Лиза',author:'Леонардо да Винчи',price:100,owner:'market',listed:true,emoji:'🖼️',image:'https://upload.wikimedia.org/wikipedia/commons/6/6a/Mona_Lisa.jpg',description:'Знаменитый портрет эпохи Возрождения. Демонстрационная карточка.'},
+ {id:'classic-2',title:'Звёздная ночь',author:'Винсент Ван Гог',price:150,owner:'market',listed:true,emoji:'🌌',image:'https://upload.wikimedia.org/wikipedia/commons/e/ea/The_Starry_Night.JPG',description:'Пейзаж с вихревым ночным небом. Демонстрационная карточка.'},
+ {id:'classic-3',title:'Дама с горностаем',author:'Леонардо да Винчи',price:200,owner:'market',listed:true,emoji:'🎨',image:'https://upload.wikimedia.org/wikipedia/commons/a/a5/Lady_with_an_Ermine_-_Leonardo_da_Vinci.jpg',description:'Портрет эпохи Возрождения. Демонстрационная карточка.'},
+ {id:'classic-4',title:'Кувшинки',author:'Клод Моне',price:120,owner:'market',listed:true,emoji:'🌸',image:'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=600',description:'Вдохновлено живописью импрессионизма.'}
+];
+let state;
+try{state=JSON.parse(localStorage.getItem('art-exchange-demo-v1')||'null')}catch(e){state=null}
+if(!state || !Array.isArray(state.works)) state={works:starter,offers:[],created:[]};
+
+function persist(){
+ try{localStorage.setItem('art-exchange-demo-v1',JSON.stringify(state))}
+ catch(e){alert('Память браузера заполнена. Попробуй изображение меньшего размера.')}
+}
+function esc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function card(w){
+ const visual=w.image?`<img src="${w.image}" alt="${esc(w.title)}" onerror="this.style.display='none'">`:`<div class="placeholder">${w.emoji||'🎨'}</div>`;
+ const action=w.owner===userId
+   ? `<button class="secondary" onclick="toggleListing('${w.id}')">${w.listed?'Снять с продажи':'Выставить на продажу'}</button>`
+   : w.listed
+     ? `<button class="primary" onclick="showArtwork('${w.id}')">Подробнее</button>`
+     : `<button class="secondary" onclick="showArtwork('${w.id}')">Предложить цену</button>`;
+ return `<article class="card"><div class="art">${visual}</div><div class="info"><div class="name">${esc(w.title)}</div><div class="artist">${esc(w.author)}</div><div class="price">⭐ ${Number(w.price).toLocaleString('ru-RU')}</div>${action}</div></article>`;
+}
+function render(){
+ const available=state.works.filter(w=>w.listed && w.owner!=='deleted');
+ const owned=state.works.filter(w=>w.owner===userId);
+ const created=state.works.filter(w=>w.creator===userId);
+ document.getElementById('homeGrid').innerHTML=available.slice(0,4).map(card).join('')||'<div class="empty">Витрина пока пуста</div>';
+ document.getElementById('marketGrid').innerHTML=available.map(card).join('')||'<div class="empty">Нет картин в продаже</div>';
+ document.getElementById('ownedGrid').innerHTML=owned.map(card).join('')||'<div class="empty">Коллекция пока пуста. Загляни в маркет.</div>';
+ document.getElementById('tradeList').innerHTML=state.works.filter(w=>w.owner!==userId).map(card).join('')||'<div class="empty">Пока нет других владельцев и работ</div>';
+ document.getElementById('ownedCount').textContent=owned.length;
+ document.getElementById('createdCount').textContent=created.length;
+ const mine=state.offers.filter(o=>o.from===userId || o.to===userId);
+ document.getElementById('offersList').innerHTML=mine.length?mine.map(o=>`<div class="row"><span>${esc(o.title)} — ${o.amount} ⭐</span><b>${esc(o.status)}</b></div>`).join(''):'<p class="small">Пока предложений нет.</p>';
+}
+function go(id,button){
+ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+ const b=button||document.querySelector(`nav button[data-page="${id}"]`);
+ if(b)b.classList.add('active');
+ render();
+}
+function showModal(title,body){
+ document.getElementById('modalTitle').textContent=title;
+ document.getElementById('modalBody').innerHTML=body;
+ document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+function findWork(id){return state.works.find(w=>w.id===id)}
+function showArtwork(id){
+ const w=findWork(id); if(!w)return;
+ const owner=w.owner===userId?'Ты':w.owner==='market'?'Галерея ART EXCHANGE':'Другой коллекционер';
+ let controls='';
+ if(w.owner==='market' && w.listed){
+   controls=`<button class="primary" onclick="demoBuy('${w.id}')">Купить · ${w.price} ⭐ (демо)</button>`;
+ }else if(w.owner!==userId){
+   controls=`<label>Твоё предложение в Stars (демо)</label><input class="field" id="offerAmount" type="number" min="1" placeholder="Например, ${Math.ceil(w.price*1.2)}"><button class="primary" onclick="sendOffer('${w.id}')">Отправить предложение</button>`;
+ }
+ showModal(w.title,`<p>${esc(w.description||'Цифровое произведение искусства.')}</p><p class="small">Автор: ${esc(w.author)}<br>Текущий владелец: ${owner}<br>Цена: ${w.price} ⭐</p><div class="actions">${controls}</div>`);
+}
+function demoBuy(id){
+ const w=findWork(id); if(!w||!w.listed||w.owner!=='market')return;
+ if(!confirm('Демо-покупка: назначить эту картину твоей коллекции? Stars не списываются.'))return;
+ w.owner=userId;w.listed=false;persist();closeModal();render();
+}
+function createArtwork(){
+ const title=document.getElementById('artTitle').value.trim();
+ const author=document.getElementById('artAuthor').value.trim()||userName;
+ const price=Number(document.getElementById('artPrice').value);
+ const file=document.getElementById('artFile').files[0];
+ if(!title||!Number.isInteger(price)||price<1||price>100000||!file){alert('Укажи название, цену от 1 до 100 000 Stars и выбери изображение.');return}
+ if(file.size>1200000){alert('Для демо выбери изображение меньше 1,2 МБ.');return}
+ const reader=new FileReader();
+ reader.onload=()=>{
+  const work={id:'user-'+Date.now(),title,author,price,image:reader.result,owner:userId,creator:userId,listed:false,description:'Работа создана пользователем.'};
+  state.works.push(work);persist();
+  document.getElementById('artTitle').value='';
+  document.getElementById('artAuthor').value='';
+  document.getElementById('artPrice').value='';
+  document.getElementById('artFile').value='';
+  go('collection');
+  alert('Работа добавлена в твою демо-коллекцию.');
+ };
+ reader.readAsDataURL(file);
+}
+function toggleListing(id){
+ const w=findWork(id);if(!w||w.owner!==userId)return;
+ w.listed=!w.listed;persist();render();
+}
+function sendOffer(id){
+ const w=findWork(id);const amount=Number(document.getElementById('offerAmount')?.value);
+ if(!w||!Number.isInteger(amount)||amount<1){alert('Введи корректную сумму.');return}
+ state.offers.push({id:'offer-'+Date.now(),workId:id,title:w.title,amount,from:userId,to:w.owner,status:'Ожидает ответа'});
+ persist();closeModal();render();alert('Демо-предложение сохранено только на этом устройстве.');
+}
+render();
+</script>
+</body>
+</html>
